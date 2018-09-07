@@ -15,6 +15,11 @@ public class PersonConroller {
     @Autowired
     private PersonRepository personrepository;
 
+    @RequestMapping(value = "/contact/email/{emailid}", method = RequestMethod.GET)
+    public Person getPersonContactByEmail(@PathVariable("emailid") String emailid){
+        return personrepository.findByemailId(emailid);
+    }
+
     @RequestMapping(value = "/contacts/{firstname}", method = RequestMethod.GET)
     public List<Person> getPersonContactByName(@PathVariable("firstname") String firstname){
         return personrepository.findByfirstName(firstname);
@@ -24,7 +29,13 @@ public class PersonConroller {
     public List<Person> searchByName(@PathVariable("firstname") String firstname,
                                      @PathVariable(name = "page", required = false) Integer page,
                                      @PathVariable(name = "pagesize", required = false) Integer pagesize){
+
         List<Person> searchedPersons = personrepository.findByfirstName(firstname);
+
+        if(searchedPersons.size() == 0){
+            return null;
+        }
+
         int defaultPageSize = 10;
         if(page == null) {
             int datalen = searchedPersons.size();
@@ -46,7 +57,7 @@ public class PersonConroller {
 
                 if (start < end && end < datalength) {
                     return searchedPersons.subList(start, end);
-                } else if (start < datalength && end > datalength) {
+                } else if (start < datalength) {
                     return searchedPersons.subList(start, datalength);
                 }
             }
@@ -59,7 +70,7 @@ public class PersonConroller {
         return personrepository.findAll();
     }
 
-    @RequestMapping(value = "/contact/create", method = RequestMethod.POST)
+    @RequestMapping(value = "/contact/new", method = RequestMethod.POST)
     public Person createContact(@Valid @RequestBody Person person){
         try {
             personrepository.insert(person);
@@ -71,19 +82,37 @@ public class PersonConroller {
     }
 
     @RequestMapping(value = "/contact/{id}", method = RequestMethod.PUT)
-    public void modifyContactById(@PathVariable("id") ObjectId id, @Valid @RequestBody Person person) {
+    public Person modifyContactById(@PathVariable("id") ObjectId id, @Valid @RequestBody Person person) {
         person.setId(id);
-        personrepository.save(person);
+        try {
+            personrepository.save(person);
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+            return null;
+        }
+        return person;
     }
 
     @RequestMapping(value = "/contact/delete/{id}", method = RequestMethod.DELETE)
-    public void deleteContact(@PathVariable("id") ObjectId id){
-        personrepository.deleteByid(id);
+    public String deleteContact(@PathVariable("id") ObjectId id){
+        try {
+            personrepository.deleteByid(id);
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+            return "Failed";
+        }
+        return "Success";
     }
 
     @RequestMapping(value = "/contact/delete/one/{emailid}", method = RequestMethod.DELETE)
-    public void deleteContactByEmailId(@PathVariable("emailid") String emailid){
-        personrepository.deleteByemailId(emailid);
+    public String deleteContactByEmailId(@PathVariable("emailid") String emailid){
+        try {
+            personrepository.deleteByemailId(emailid);
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+            return "Failed";
+        }
+        return "Success";
     }
 
 }
